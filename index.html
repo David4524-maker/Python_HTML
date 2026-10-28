@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Python HTML</title>
+<style>
+  :root {
+    --py-blue: #3776ab;
+    --py-yellow: #ffd43b;
+    --bg: #eef2f7;
+    --panel: #ffffff;
+    --border: #c9d3e0;
+    --text: #1b2430;
+    --text-muted: #5d6b7e;
+    --bar: #3776ab;
+    --bar-text: #ffffff;
+    --code-bg: #fbfcfe;
+    --code-text: #1b2430;
+    --prompt: #b8860b;
+    --ok: #2e7d4f;
+    --err: #c0392b;
+    color-scheme: light dark;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11161d;
+      --panel: #1a212b;
+      --border: #2c3744;
+      --text: #e7edf5;
+      --text-muted: #8d9bb0;
+      --bar: #2b5b87;
+      --code-bg: #141a22;
+      --code-text: #e7edf5;
+      --prompt: #ffd43b;
+      --ok: #4caf7d;
+      --err: #ff7b6b;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  body { padding: 20px 16px 32px; max-width: 780px; margin: 0 auto; }
+
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .logo { width: 40px; height: 40px; flex: none; }
+  h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.2px; flex: 1; min-width: 120px; }
+  h1 b { color: var(--py-blue); }
+  @media (prefers-color-scheme: dark) { h1 b { color: var(--py-yellow); } }
+
+  select#lang {
+    font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer;
+  }
+  .status {
+    font-size: 12px; padding: 5px 11px; border-radius: 20px; background: var(--panel);
+    border: 1px solid var(--border); color: var(--text-muted); display: flex; align-items: center; gap: 6px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
+  .status.loading .dot { background: var(--py-yellow); animation: pulse 1s infinite; }
+  .status.ready .dot { background: var(--ok); }
+  .status.error .dot { background: var(--err); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .win { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; margin-top: 16px; overflow: hidden; }
+  .bar { display: flex; align-items: center; gap: 8px; background: var(--bar); color: var(--bar-text);
+    font-size: 12px; padding: 7px 12px; }
+  .bar svg { width: 14px; height: 14px; }
+  .bar .name { font-weight: 600; }
+  .bar .sub { margin-left: auto; opacity: .75; font-family: Consolas, Menlo, monospace; }
+
+  textarea#code {
+    width: 100%; height: 230px; background: var(--code-bg); color: var(--code-text); border: none;
+    padding: 12px; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 13px; line-height: 1.6; resize: vertical; display: block; tab-size: 4;
+  }
+  textarea#code:focus-visible { outline: 2px solid var(--py-yellow); outline-offset: -2px; }
+
+  .toolbar { display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    flex-wrap: wrap; border-top: 1px solid var(--border); }
+  button#run {
+    font: inherit; font-size: 13px; font-weight: 700; padding: 9px 20px; border-radius: 6px;
+    border: 1px solid #e0b800; background: var(--py-yellow); color: #1b2430; cursor: pointer;
+  }
+  button#run:hover:not(:disabled) { background: #ffdf62; }
+  button#run:focus-visible { outline: 2px solid var(--py-blue); outline-offset: 2px; }
+  button#run:disabled { opacity: .5; cursor: not-allowed; }
+  .hint { font-size: 12px; color: var(--text-muted); }
+
+  pre#output {
+    margin: 0; padding: 12px; background: var(--code-bg); color: var(--code-text);
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 13px; line-height: 1.6; min-height: 100px; max-height: 280px; overflow: auto;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  pre#output .prompt { color: var(--prompt); font-weight: 700; user-select: none; }
+  pre#output .err { color: var(--err); }
+  pre#output .muted { color: var(--text-muted); }
+
+  footer { margin-top: 16px; font-size: 11px; color: var(--text-muted); text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+    <path fill="#3776ab" d="M23.6 4C14 4 14.6 8.2 14.6 8.2l0 4.4h9.2v1.3H10.9S4.7 13.2 4.7 22.9s5.4 9.3 5.4 9.3h3.2v-4.5s-.2-5.4 5.3-5.4h9.1s5.1.1 5.1-5V9.2S34.5 4 23.6 4zm-5.1 3a1.7 1.7 0 110 3.4 1.7 1.7 0 010-3.4z"/>
+    <path fill="#ffd43b" d="M24.4 44c9.600 0 9-4.200 9-4.200l0-4.400h-9.200v-1.300h12.900s6.200.7 6.200-9-5.400-9.300-5.400-9.300h-3.200v4.500s.2 5.400-5.300 5.400h-9.100s-5.100-.1-5.100 5v8.100S13.500 44 24.400 44zm5.100-3a1.700 1.700 0 110-3.400 1.700 1.700 0 010 3.400z"/>
+  </svg>
+  <h1><b>Python</b> HTML</h1>
+  <select id="lang" aria-label="Language"></select>
+  <div class="status loading" id="status"><span class="dot"></span><span id="statusText"></span></div>
+</header>
+
+<div class="win">
+  <div class="bar">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#fff" d="M23.600 4C14 4 14.600 8.200 14.600 8.200v4.400h9.200v1.300H10.900S4.700 13.200 4.700 22.900s5.400 9.300 5.400 9.300h3.200v-4.500s-.2-5.400 5.300-5.400h9.100s5.100.1 5.100-5V9.200S34.500 4 23.600 4z"/><path fill="#ffd43b" d="M24.400 44c9.600 0 9-4.200 9-4.200v-4.400h-9.200v-1.300h12.900s6.200.7 6.200-9-5.400-9.300-5.400-9.300h-3.200v4.500s.2 5.400-5.300 5.400h-9.100s-5.100-.1-5.100 5v8.100S13.500 44 24.400 44z"/></svg>
+    <span class="name" data-i18n="editor"></span>
+    <span class="sub">Python 3.12</span>
+  </div>
+  <textarea id="code" spellcheck="false"></textarea>
+  <div class="toolbar">
+    <button id="run" disabled data-i18n="run"></button>
+    <span class="hint" data-i18n="hint"></span>
+  </div>
+</div>
+
+<div class="win">
+  <div class="bar"><span class="name" data-i18n="shell"></span><span class="sub">&gt;&gt;&gt;</span></div>
+  <pre id="output"></pre>
+</div>
+
+<footer data-i18n="footer"></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/pyodide@0.26.1/pyodide.js"></script>
+<script>
+  const T = {
+    es: { n:'Español', loading:'cargando Python…', ready:'Python listo', running:'ejecutando…', fail:'no se pudo cargar Python',
+      editor:'editor.py', run:'Ejecutar', hint:'Ctrl/Cmd + Enter también ejecuta', shell:'Shell',
+      empty:'(aquí aparecerá el resultado)', loadErr:'Error al cargar Pyodide: ',
+      footer:'Python corre de verdad en tu navegador vía Pyodide (WebAssembly). La primera carga tarda unos segundos.',
+      hello:'Hola desde Python real, corriendo en tu navegador', sum:'Suma de 1 a 10:', name:'mundo', greet:'¡Hola, {nombre}!' },
+    en: { n:'English', loading:'loading Python…', ready:'Python ready', running:'running…', fail:'could not load Python',
+      editor:'editor.py', run:'Run', hint:'Ctrl/Cmd + Enter also runs', shell:'Shell',
+      empty:'(the result will appear here)', loadErr:'Error loading Pyodide: ',
+      footer:'Python really runs in your browser via Pyodide (WebAssembly). The first load takes a few seconds.',
+      hello:'Hello from real Python, running in your browser', sum:'Sum of 1 to 10:', name:'world', greet:'Hello, {nombre}!' },
+    pt: { n:'Português', loading:'carregando Python…', ready:'Python pronto', running:'executando…', fail:'não foi possível carregar o Python',
+      editor:'editor.py', run:'Executar', hint:'Ctrl/Cmd + Enter também executa', shell:'Shell',
+      empty:'(o resultado aparecerá aqui)', loadErr:'Erro ao carregar o Pyodide: ',
+      footer:'O Python roda de verdade no seu navegador via Pyodide (WebAssembly). O primeiro carregamento leva alguns segundos.',
+      hello:'Olá do Python de verdade, rodando no seu navegador', sum:'Soma de 1 a 10:', name:'mundo', greet:'Olá, {nombre}!' },
+    fr: { n:'Français', loading:'chargement de Python…', ready:'Python prêt', running:'exécution…', fail:'impossible de charger Python',
+      editor:'editeur.py', run:'Exécuter', hint:'Ctrl/Cmd + Entrée exécute aussi', shell:'Shell',
+      empty:'(le résultat s’affichera ici)', loadErr:'Erreur de chargement de Pyodide : ',
+      footer:'Python s’exécute vraiment dans votre navigateur via Pyodide (WebAssembly). Le premier chargement prend quelques secondes.',
+      hello:'Bonjour depuis le vrai Python, dans votre navigateur', sum:'Somme de 1 à 10 :', name:'monde', greet:'Bonjour, {nombre} !' },
+    de: { n:'Deutsch', loading:'Python wird geladen…', ready:'Python bereit', running:'läuft…', fail:'Python konnte nicht geladen werden',
+      editor:'editor.py', run:'Ausführen', hint:'Strg/Cmd + Enter führt ebenfalls aus', shell:'Shell',
+      empty:'(das Ergebnis erscheint hier)', loadErr:'Fehler beim Laden von Pyodide: ',
+      footer:'Python läuft wirklich in Ihrem Browser über Pyodide (WebAssembly). Das erste Laden dauert einige Sekunden.',
+      hello:'Hallo vom echten Python in Ihrem Browser', sum:'Summe von 1 bis 10:', name:'Welt', greet:'Hallo, {nombre}!' },
+    it: { n:'Italiano', loading:'caricamento di Python…', ready:'Python pronto', running:'in esecuzione…', fail:'impossibile caricare Python',
+      editor:'editor.py', run:'Esegui', hint:'Anche Ctrl/Cmd + Invio esegue', shell:'Shell',
+      empty:'(il risultato apparirà qui)', loadErr:'Errore nel caricamento di Pyodide: ',
+      footer:'Python gira davvero nel tuo browser tramite Pyodide (WebAssembly). Il primo caricamento richiede qualche secondo.',
+      hello:'Ciao dal vero Python, nel tuo browser', sum:'Somma da 1 a 10:', name:'mondo', greet:'Ciao, {nombre}!' },
+    zh: { n:'中文', loading:'正在加载 Python…', ready:'Python 已就绪', running:'运行中…', fail:'无法加载 Python',
+      editor:'editor.py', run:'运行', hint:'也可按 Ctrl/Cmd + Enter 运行', shell:'Shell',
+      empty:'（结果将显示在这里）', loadErr:'加载 Pyodide 出错：',
+      footer:'Python 通过 Pyodide（WebAssembly）真正在浏览器中运行。首次加载需要几秒钟。',
+      hello:'来自真正的 Python，运行在你的浏览器里', sum:'1 到 10 的和：', name:'世界', greet:'你好，{nombre}！' },
+    ja: { n:'日本語', loading:'Python を読み込み中…', ready:'Python 準備完了', running:'実行中…', fail:'Python を読み込めませんでした',
+      editor:'editor.py', run:'実行', hint:'Ctrl/Cmd + Enter でも実行できます', shell:'シェル',
+      empty:'（ここに結果が表示されます）', loadErr:'Pyodide の読み込みエラー：',
+      footer:'Python は Pyodide（WebAssembly）を使ってブラウザー上で本当に動きます。初回の読み込みには数秒かかります。',
+      hello:'ブラウザーで動く本物の Python からこんにちは', sum:'1 から 10 の合計：', name:'世界', greet:'こんにちは、{nombre}！' },
+    ko: { n:'한국어', loading:'Python 불러오는 중…', ready:'Python 준비됨', running:'실행 중…', fail:'Python을 불러올 수 없습니다',
+      editor:'editor.py', run:'실행', hint:'Ctrl/Cmd + Enter로도 실행됩니다', shell:'셸',
+      empty:'(결과가 여기에 표시됩니다)', loadErr:'Pyodide 로드 오류: ',
+      footer:'Python이 Pyodide(WebAssembly)를 통해 브라우저에서 실제로 실행됩니다. 처음 불러올 때 몇 초 걸립니다.',
+      hello:'브라우저에서 실행되는 진짜 Python에서 인사드립니다', sum:'1부터 10까지의 합:', name:'세상', greet:'안녕하세요, {nombre}!' },
+    ru: { n:'Русский', loading:'загрузка Python…', ready:'Python готов', running:'выполнение…', fail:'не удалось загрузить Python',
+      editor:'editor.py', run:'Запустить', hint:'Ctrl/Cmd + Enter тоже запускает', shell:'Оболочка',
+      empty:'(здесь появится результат)', loadErr:'Ошибка загрузки Pyodide: ',
+      footer:'Python действительно работает в вашем браузере через Pyodide (WebAssembly). Первая загрузка занимает несколько секунд.',
+      hello:'Привет от настоящего Python в вашем браузере', sum:'Сумма от 1 до 10:', name:'мир', greet:'Привет, {nombre}!' }
+  };
+
+  const statusEl = document.getElementById('status');
+  const statusText = document.getElementById('statusText');
+  const runBtn = document.getElementById('run');
+  const codeEl = document.getElementById('code');
+  const outputEl = document.getElementById('output');
+  const langEl = document.getElementById('lang');
+
+  let lang = 'es', dirty = false, showingEmpty = true, st = { mode: 'loading', key: 'loading' }, pyodide = null;
+
+  function sample(L) {
+    const t = T[L];
+    return 'print("' + t.hello + '")\n\ntotal = 0\nfor n in range(1, 11):\n    total += n\nprint("' + t.sum +
+      '", total)\n\nnombre = "' + t.name + '"\nprint(f"' + t.greet + '")';
+  }
+  function setStatus(mode, key) {
+    st = { mode, key };
+    statusEl.className = 'status ' + mode;
+    statusText.textContent = T[lang][key];
+  }
+  function renderEmpty() {
+    outputEl.innerHTML = '';
+    const p = document.createElement('span'); p.className = 'prompt'; p.textContent = '>>> ';
+    const m = document.createElement('span'); m.className = 'muted'; m.textContent = T[lang].empty;
+    outputEl.append(p, m);
+    showingEmpty = true;
+  }
+  function applyLang(L) {
+    lang = L;
+    try { localStorage.setItem('pyhtml-lang', L); } catch (e) {}
+    document.documentElement.lang = L;
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = T[L][el.dataset.i18n]; });
+    langEl.value = L;
+    statusText.textContent = T[L][st.key];
+    if (!dirty) codeEl.value = sample(L);
+    if (showingEmpty) renderEmpty();
+  }
+  function writeOutput(text, isError) {
+    if (showingEmpty) { outputEl.innerHTML = ''; showingEmpty = false; }
+    const span = document.createElement('span');
+    if (isError) span.className = 'err';
+    span.textContent = text;
+    outputEl.appendChild(span);
+    outputEl.scrollTop = outputEl.scrollHeight;
+  }
+
+  async function boot() {
+    try {
+      pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/npm/pyodide@0.26.1/' });
+      pyodide.setStdout({ batched: s => writeOutput(s + '\n', false) });
+      pyodide.setStderr({ batched: s => writeOutput(s + '\n', true) });
+      setStatus('ready', 'ready');
+      runBtn.disabled = false;
+    } catch (e) {
+      setStatus('error', 'fail');
+      writeOutput(T[lang].loadErr + (e && e.message ? e.message : e) + '\n', true);
+    }
+  }
+
+  async function run() {
+    if (!pyodide || runBtn.disabled) return;
+    outputEl.innerHTML = ''; showingEmpty = false;
+    runBtn.disabled = true;
+    setStatus('loading', 'running');
+    try {
+      await pyodide.runPythonAsync(codeEl.value);
+    } catch (err) {
+      writeOutput(String(err), true);
+    }
+    setStatus('ready', 'ready');
+    runBtn.disabled = false;
+  }
+
+  Object.keys(T).forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = T[k].n; langEl.appendChild(o); });
+  langEl.addEventListener('change', () => applyLang(langEl.value));
+  codeEl.addEventListener('input', () => { dirty = true; });
+  runBtn.addEventListener('click', run);
+  codeEl.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); run(); }
+  });
+
+  let saved = null;
+  try { saved = localStorage.getItem('pyhtml-lang'); } catch (e) {}
+  const nav = (navigator.language || 'es').slice(0, 2).toLowerCase();
+  applyLang(T[saved] ? saved : (T[nav] ? nav : 'es'));
+  boot();
+</script>
+
+</body>
+</html>
